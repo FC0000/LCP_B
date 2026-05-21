@@ -1,0 +1,393 @@
+\documentclass[prl,twocolumn]{revtex4-1}
+
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{latexsym,amsmath}
+\usepackage{comment}
+
+\definecolor{linkcolor}{rgb}{0,0,0.65} %hyperlink
+\usepackage[pdftex,colorlinks=true, pdfstartview=FitV, linkcolor= linkcolor, citecolor= linkcolor, urlcolor= linkcolor, hyperindex=true,hyperfigures=true]{hyperref} %hyperlink%
+
+
+
+\begin{document}
+
+\title{Group 2607 -- Clustering}
+
+
+
+
+
+\author{Fabio Cimino}
+\author{Riccardo Ferrante}
+\author{Daniele Ghezzi}
+\author{Federico Scianna}
+
+\date{\today}
+
+
+\begin{abstract}
+8/9 righe\\
+8/9 righe\\
+8/9 righe\\
+8/9 righe\\
+8/9 righe\\
+8/9 righe\\
+8/9 righe\\
+8/9 righe\\
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+The aim of this assignment is to investigate the performance of different clustering techniques in a variety of unsupervised learning problems.
+In particular, we analyze how the characteristics of a dataset influence the effectiveness of k-means, DBSCAN, and spectral clustering approaches.
+To this end, we consider four distinct problems that highlight the strengths and limitations of these clustering methods.
+
+
+%The main purpose of this assignment is to analyze how different clustering techniques perform in tackling different unsupervised learning problems. To do so, we study three different learning problems to find the clustering method more suitable to each one, and the reasons of why and when some of them fail. Finally, we briefly discuss a problem where none of the discussed methods work correctly, in order to underline the limitations of the unsupervised learning techniques implemented.
+
+In the first problem, the objective is to identify clusters in a dataset composed of 600 points in a 12-dimensional space.
+Since direct visualization of 12-dimensional data is impossible, we first compare different dimensionality reduction techniques that allow for a 2-dimensional representation of the data.
+We then evaluate the performance of several clustering algorithms on the original data representation.
+%In the \textbf{first problem} we want to identify clusters in a dataset consisting of 600, 12-dimensional points.
+%We first compare different visualisation methods based on their ability to maintain the main features of the dataset while reducing the dimension to allow the bidimensional plotting.
+%We then compare the performances of different clustering algorithms on the problem.
+
+The second problem focuses on anomaly detection in a collection of 101 time series of equal length.
+Each time series is interpreted as a point in an $L$-dimensional space, where $L$ denotes the series length.
+The goal is to isolate the anomalous series by identifying it as an outlier with respect to the remaining data, which are expected to form a single cluster.
+%The \textbf{second problem} consists in using clustering to detect the anomaly in a set of 101 time series of the same length. Each time series is a data point in an $L$-dimensional space, $L$ being the length of the series. The idea is to collect all points but one in a single cluster, isolating the anomaly as an outlier.
+
+In the third problem, we analyze a dataset consisting of 120 time series containing different hidden patterns embedded in noise.
+The objective is to determine whether clustering techniques can distinguish time series containing sinusoidal or square-wave signals from those containing noise only.
+%In the \textbf{third problem} we work with a set of 120 time series. We use clustering algorithms to identify the series in which is present a sinusoidal or square wave patterns and distinguish them from the others, identifying hidden patterns hidden in the noise.
+
+Finally, in the fourth problem, we consider a dataset from a different assignment.
+The data points are uniformly distributed over a two-dimensional region and divided into two classes according to a checkerboard-like pattern.
+This example illustrates a situation in which standard clustering methods fail to recover the true structure of the data.
+%In the \textbf{fourth and last problem} we work with a dataset from the lab session on neural networks. In this case, the data points are uniformly distributed over a portion of the 2D plane, and separated into two classes in a checkerboard-like pattern.
+
+\section{Data generation}
+
+This section outlines the data generation process for the four problems.
+Generated labels are retained solely for evaluating clustering performance.
+
+%\noindent Before getting into the details of how the data is generated, it is important to observe that, although the datasets used in this work are synthetically generated and come with known labels, those labels are never used during the clustering process, but uniquely as a reference to evaluate the results. The metrics used to do so are described in the Methods section.\\
+%\noindent The following subsections detail the data generation for the experiments.
+
+\subsection{Problem 1}
+For this problem, 600 data points are generated in a three-dimensional space, distributed along different parametric curves.
+Specifically, class 0, representing 35\% of the data, lies on a toroidal curve; class 1, representing 45\% of the data, lies on three translated ellipses; and class 2, representing 20\% of the data, lies on two symmetric oblique lines.
+Gaussian noise is added to each point.
+To embed the data in a higher-dimensional space, nine additional noise dimensions are appended, resulting in a 12-dimensional dataset.
+Finally, a random orthogonal rotation is applied to the data to hide the underlying structure.
+%\noindent For this experiment, we generate 600 three-dimensional data points, laying on different parametric curves in the 3D space: class 0 lies on a toroidal curve and is composed of 35\% of the data, class 1 on three translated ellipses and is composed of 45\% of the data, and class 2 on two symmetric oblique lines, and is composed of 20\% of the data. Gaussian noise is added to each point. Then, 9 noise dimensions are added to the data to embed it to a 12-dimensional space. Finally, the data is rotated with a random orthogonal matrix in order to hide the underlying structure.
+
+\subsection{Problem 2}
+The dataset for this problem consists of 101 time series, each of length 100, generated as autoregressive processes of order one (AR(1)):
+\begin{equation}
+    x_t = \phi \cdot x_{t-1} + \epsilon_t, \ \epsilon_t \sim \mathcal{N}(0, \sigma ^2),
+\end{equation}
+with parameter $\phi = 0.8$ and white noise standard deviation $\sigma = 5$.
+An anomalous time series is introduced by adding a constant offset to one of the series, with amplitude given by a random integer sampled uniformly between 5 and 24.
+%\noindent The data for this experiment are 101 time series of length 100. They are generated as AR(1) processes:
+
+%with $\phi = 0.8$ and $\sigma = 5$. An anomaly is then introduced in one of the time series: it is generated from the same process, but with a constant offset whose amplitude varies within the set $\{5,6,\dots,24 \}$.
+\subsection{Problem 3}
+The data for this problem consist of 120 time series generated as AR(1) processes.
+A third of the series are augmented with a sinusoidal pattern, another third with a square-wave pattern, while the remaining contain only the base AR(1) process.
+This procedure yields three equally sized, distinct clusters.
+    
+%\noindent The data for this problem consist of 120 time series generated as AR(1) processes. To forty of them a sinusoidal pattern is added, and to other forty a square wave one. No pattern is added to the remaining forty. This yields three distinct groups of forty data points each.
+\subsection{Problem 4}
+\noindent The data for this problem are taken from the lab session material on neural networks.
+
+
+
+\section{Methods}
+%\noindent In the assignment we use both dimensionality reduction and clustering techniques. Dimensionality reduction is the process of mapping data from a high-dimensional space $d$ into a lower-dimensional one $k$, aiming to discard noise while retaining the most meaningful properties and underlying structure of the dataset. In the following we apply:
+
+--general intro paragraph
+
+For data visualization, three dimensionality reduction methods are considered:
+
+\begin{itemize}
+    \item \textbf{Principal Component Analysis (PCA)}:
+    a linear, dimensionality reduction technique that projects data onto a new orthogonal basis formed by a subset of $k$ eigenvectors of the sample covariance matrix.
+    The selected eigenvectors maximize the variance retained in the lower-dimensional representation.
+
+    \item \textbf{t-distributed Stochastic Neighbor Embedding (t-SNE)}:
+    a non-linear dimensionality reduction technique designed to preserve the local structure of high-dimensional data.
+    The method first converts pairwise distances between data points in the original space into conditional similarity probabilities.
+    For each point $x_i$, the similarity to another point $x_j$ is modeled as
+    \begin{equation}
+        p_{j|i} = \frac{\exp \left( -\|x_i - x_j\|^2 / 2\sigma_i^2 \right)}
+        {\sum_{k \neq i} \exp \left( -\|x_i - x_k\|^2 / 2\sigma_i^2 \right)},
+    \end{equation}
+    where the bandwidth $\sigma_i$ is chosen such that the distribution has a prescribed perplexity, a parameter controlling the effective number of neighbors considered around each point.
+    The conditional probabilities are then symmetrized to obtain joint similarities $p_{ij}$:
+    \begin{equation}
+        p_{ij} = \frac{p_{j|i} + p_{i|j}}{2N}.
+    \end{equation}
+
+    In the low-dimensional embedding, similarities between points $y_i$ and $y_j$ are instead modeled using a Student's t-distribution with one degree of freedom:
+    \begin{equation}
+        q_{ij} =
+        \frac{\left(1+\|y_i-y_j\|^2\right)^{-1}}
+        {\sum_{k \neq l}\left(1+\|y_k-y_l\|^2\right)^{-1}}.
+    \end{equation}
+    Compared to a Gaussian distribution, the heavier tails of the Student's t-distribution reduce the tendency of distant points to accumulate in the center of the embedding, allowing well-separated clusters to emerge more clearly.
+
+    The embedding is obtained by minimizing the Kullback--Leibler divergence between the high-dimensional and low-dimensional similarity distributions:
+    \begin{equation}
+        C = \sum_{i \neq j} p_{ij}\log\frac{p_{ij}}{q_{ij}},
+    \end{equation}
+    which is optimized through gradient descent.
+    As a result, points that are close in the original space tend to remain close in the low-dimensional representation, while dissimilar points are mapped farther apart.
+
+    \item \textbf{Metric Multidimensional Scaling (Metric MDS)}:
+    a geometry-based technique that seeks a low-dimensional embedding preserving global pairwise distances.
+    Given a distance matrix $d_{ij}$ in the original space, Metric MDS learns low-dimensional coordinates $y_i$ by minimizing the stress function:
+    \begin{equation}
+        S = \sum_{i<j} \left( d_{ij} - \|y_i - y_j\| \right)^2,
+    \end{equation}
+    ensuring that the spatial relationships in the lower-dimensional representation approximate the original distances.
+
+    
+\end{itemize}
+
+\begin{comment}
+ \begin{itemize}
+\item \textbf{PCA}: a linear dimensionality reduction technique that projects data onto a new orthogonal basis formed by a subset of $k$ eigenvectors of the sample covariance matrix, chosen to maximize the retained variance.
+\item \textbf{t-SNE}: a non-linear algorithm optimized for preserving local neighborhoods. It models high-dimensional pairwise similarities $p_{ij}$ using a Gaussian kernel, whose variance is determined by an hyperparameter called perplexity which embeds the effective number of local neighbors for each point. For the low-dimensional similarities $q_{ij}$, t-SNE employs a Student's t-distribution, which is crucial since it allows to push dissimilar points further apart while keeping similar points closely bound. The final embedding is optimized via gradient descent by minimizing the Kullback-Leibler (KL) divergence between the two probability distributions: $$C = \sum_{i \neq j} p_{ij} \log \frac{p_{ij}}{q_{ij}}$$
+\item \textbf{Metric Multidimensional Scaling (Metric MDS)}: a geometry-based dimensionality reduction technique that embeds data into a lower-dimensional space by preserving global pairwise distances. Given a high-dimensional distance matrix with entries $d_{ij}$, Metric MDS learns low-dimensional coordinates $y_i$ by minimizing a Stress function defined as $$S = \sum_{i<j} (d_{ij} - \|y_i - y_j\|)^2$$ Therefore, the algorithm forces the new spatial geometry to mirror the original distances in the high-dimensional space.
+\end{itemize}   
+\end{comment}
+    
+
+
+Clustering aims to partition a dataset into groups of similar points based on a defined notion of similarity.
+In this work, three widely used clustering algorithms are considered:
+\begin{itemize}
+    \item \textbf{k-means}:
+    is a centroid-based algorithm that partitions the dataset into $k$ clusters by minimizing the sum of squared distances between each point and the centroid of its assigned cluster.
+    The algorithm iteratively updates cluster centroids and point assignments until convergence.
+
+    \item \textbf{Density-Based Spatial Clustering of Applications with Noise (DBSCAN)}:
+    groups points based on local density.
+    Points that are close to many neighbors are grouped together, while points in sparse regions are treated as noise.
+    This approach allows DBSCAN to identify clusters of arbitrary shape and to automatically detect outliers, without requiring the number of clusters as an input.
+
+    \item \textbf{Spectral Clustering}
+    is a graph-based technique capable of identifying non-convex clusters by analyzing the connectivity of the data.
+    An affinity matrix is first constructed to model pairwise similarities, here using a Radial Basis Function (RBF) kernel where the hyperparameter $\gamma$ acts as the inverse of the variance, controlling the scale of local neighborhoods.
+    A diagonal degree matrix is computed by summing the rows of the affinity matrix, and the Graph Laplacian is obtained by subtracting the affinity matrix from the degree matrix.
+    The eigenvectors corresponding to the smallest eigenvalues of the Laplacian are used to project the data into a lower-dimensional spectral space, where connected components become separable.
+    Finally, a QR decomposition is applied to extract discrete cluster labels.
+    
+    %\item \textbf{Spectral Clustering}: a graph-based clustering technique that identifies non-convex clusters by analyzing the connectivity of the data. First, an affinity matrix is constructed to model pairwise similarities: we employ a Radial Basis Function (RBF) kernel, where the hyperparameter gamma acts as the inverse of the variance, dictating the scale of the local neighborhoods. Next, a diagonal degree matrix is computed by summing the rows of the affinity matrix. The Graph Laplacian is then calculated by subtracting the affinity matrix from the degree matrix. The algorithm computes the eigenvectors corresponding to the smallest eigenvalues of this Laplacian, effectively projecting the data into a lower-dimensional spectral space where the underlying connected components become clearly separable. Finally, a QR decomposition strategy is applied to these eigenvectors to extract the final discrete cluster labels \cite{}.
+\end{itemize}
+\noindent Finally, we implement several metrics to assess the quality of the clustering:
+\begin{itemize}
+    \item \textbf{Normalized Mutual Information (NMI)}:
+    quantifies the similarity between the clusters identified by the algorithm and the labels provided in the dataset.
+    It measures how much knowing the cluster assignment of a point reduces the uncertainty about its class label, and vice versa.
+    NMI values range from 0 to 1, with 1 indicating that the clusters perfectly correspond to the known classes and 0 indicating no correlation.
+    This metric is independent of the absolute values of the labels and symmetric in the true and predicted labels.
+    However, it has a bias towards labelings with too many distinct label values \cite{}.
+    
+    \item \textbf{Silhouette Index}:
+    evaluates how well each point is assigned to its cluster by comparing the average distance to other points in the same cluster with the average distance to points in the nearest neighboring cluster.
+    For each data point, the silhouette value is calculated as 
+    \begin{equation}
+        s = \frac{b - a}{\max(a, b)},
+    \end{equation}
+    where $a$ is the average intra-cluster distance and $b$ is the smallest average inter-cluster distance to any other cluster.
+    The overall Silhouette Index is the mean silhouette value across all points.
+	Values close to 1 indicate that points are well matched to their own clusters and poorly matched to neighboring clusters, values near 0 indicate overlapping clusters, and negative values indicate possible misclassification.
+    
+    \item \textbf{F1 Score}:
+    provides a combined measure of clustering precision and recall for each reference class.
+    Precision measures the fraction of points assigned to a cluster that actually belong to the corresponding class, while recall measures the fraction of class members that are correctly captured within the cluster.
+    The F1 score is the harmonic mean of precision and recall.
+    High values indicate that clusters accurately represent the classes, balancing the trade-off between including only relevant points and capturing all members of a class.
+    
+\end{itemize}
+
+ All the algorithms and metrics are implemented using the Python package \texttt{Scikit-Learn}.
+\section{Results}
+
+
+Describe what you found.
+
+Cite Figure~\ref{fig:x}(a), etc. to add information. Later also cite Figure~\ref{fig:y} and  Figure~\ref{fig:z}. Of course the number and size of figures may vary from project to project.
+
+Cite Table~\ref{tab:1} to collect useful data in a clear way.
+
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+  
+%%%%%%%%%%%%%%%%%%%
+\begin{figure}[!tb]
+  \includegraphics[width=0.44\textwidth]{fig1a.png}
+  \caption{Description...}
+  \label{fig:y}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%
+
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+
+  
+
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+  
+%%%%%%%%%%%%%%%%%%%
+\begin{figure}[!tb]
+  \includegraphics[width=0.44\textwidth]{fig1a.png}
+  \caption{Description...}
+  \label{fig:z}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%
+
+
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+  
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+
+  
+
+
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+
+\section{Conclusions}
+
+Discuss the key aspects that we can take home from this work.
+
+Check if your text is light, swift, and correct in exposing its passages.
+
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+
+  
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+  
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+
+  
+  
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+  
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz
+  zzzzzzzzzzzzzzz zzzzz zzzzzzzzzz zzzzzzz z zzzzzzzzzzz zzzz zzzzzzzzz.
+
+  
+
+
+
+
+
+\begin{thebibliography}{99}
+
+\bibitem{pap1}
+  B. Franklin,
+  J. Here There {\bf 10}, 20--40 (1800).
+  
+\bibitem{pap2}
+  A. Einstein,
+  Int. J. There Here {\bf 20}, 125--133 (1910).
+  
+\end{thebibliography}
+
+\clearpage
+
+%%%%%%%%%%%%%%%%%%%
+\begin{figure*}[!tb]
+  \centering
+  \includegraphics[width=\textwidth]{description_assignment_LCPB_20-21.pdf}
+\end{figure*}
+%%%%%%%%%%%%%%%%%%%
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
