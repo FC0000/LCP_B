@@ -67,7 +67,7 @@ Finally, the data is rotated with a random orthogonal matrix in order to hide th
     \caption{3D data for Problem 1, before the addition of noise components to embed them in a 12D space.}
     \label{fig:placeholder}
 \end{figure}\\
-\vspace{-3em}
+\vspace{-4em}
 \subsection{Problem 2}
 \vspace{-1em}
 \noindent The data for this experiment are 101 time series of length 100. They are generated as autoregressive processes of first order AR(1):
@@ -82,22 +82,22 @@ with a recall force parameter $\phi = 0.8$ and white noise standard deviation $\
 augmented with a sinusoidal pattern, another third with
 a square-wave pattern, while the remaining contain only
 the AR(1) generated noise. The obtained set of time series is shown in Figure~\ref{fig:1}.
-\begin{figure}[h]
+\vspace{-1.5em}
+\subsection{Problem 4}
+\vspace{-1em}
+\noindent In this problem the data are 2-dimensional with binary labels, disposed in a checkerboard structure over a section of the plane as depicted in Figure~\ref{fig:2}.
+\begin{figure}[b]
     \centering
     \includegraphics[width=\linewidth]{Pictures/experiment3/time_series.png}
     \caption{Dataset for problem 3: set of 120 time series with different anomalies.}
     \label{fig:1}
 \end{figure} 
-\vspace{-2.5em}
-\subsection{Problem 4}
-\vspace{-1em}
-\noindent In this problem the data are 2-dimensional with binary labels, disposed in a checkerboard structure over a section of the plane as depicted in Figure~\ref{fig:2}.
-\begin{figure}%[h]
+\begin{figure}[b]
     \centering
-    \includegraphics[width=0.6\linewidth]{Pictures/experiment4/ground_truth.png}
+    \includegraphics[width=0.7\linewidth]{Pictures/experiment4/ground_truth.png}
     \caption{Labeled dataset for Problem 4.}
     \label{fig:2}
-\end{figure}
+\end{figure} 
 
 %\vspace{-2em}
 \section{Methods}
@@ -159,7 +159,7 @@ the AR(1) generated noise. The obtained set of time series is shown in Figure~\r
 \subsection{Clustering Algorithms}
 \vspace{-1em}
 \noindent Clustering aims to partition a dataset into groups of similar points based on a defined notion of similarity.
-In this work, two widely used clustering algorithms are considered:
+In this work, three widely used clustering algorithms are considered:
 \vspace{-0.5em}
 \begin{itemize}[leftmargin=0pt, itemsep=0pt]
     \item[] \textbf{K-means}:
@@ -199,7 +199,7 @@ In this work, two widely used clustering algorithms are considered:
     used to quantify the information shared between the clusters identified by the algorithm and the ground truth labels provided in the dataset.
     It can be evaluated as 
     \begin{equation}
-        NMI(Y,C)=\frac{2I(Y;C)}{H(Y)+H(C)},
+        \mathrm{NMI}(Y,C)=\frac{2I(Y;C)}{H(Y)+H(C)},
     \end{equation}
     where $I$ represents the mutual information between real labels $Y$ and predicted ones $C$. The normalization factor is given by the sum of the entropies $H$ associated to both $Y$ and $C$ \cite{vinh2010information}.
     The notion of entropy adopted is the information entropy, where the probability is calculated as the ratio of labels of a certain class $i$ over all the total number of labels. \\
@@ -219,12 +219,12 @@ In this work, two widely used clustering algorithms are considered:
     provides a combined measure of the precision and recall of the clustering algorithm with respect to the ground truth reference class.
     Precision measures the fraction of points assigned to a cluster that actually belong to the corresponding class. It can be computed as
     \begin{equation}
-        Precision = \frac{TP}{TP+FP},
+        \text{Precision} = \frac{TP}{TP+FP},
     \end{equation}
     where $TP$ and $FP$ respectively represent \textit{True Positives} and \textit{False Positives}.
     Recall measures the fraction of points of the same class correctly captured within a cluster. Recall can be derived as
     \begin{equation}
-        Recall = \frac{TP}{TP+FN},
+        \text{Recall} = \frac{TP}{TP+FN},
     \end{equation}
     where $FN$ refers to \textit{False Negatives}.
     The F1 score is the harmonic mean of precision and recall.
@@ -234,32 +234,15 @@ In this work, two widely used clustering algorithms are considered:
 
 \noindent Algorithms and metrics are implemented using the Python package \texttt{Scikit-Learn} \cite{geron}.
 
-\section{Results}
-\subsection{Problem 1}
-\noindent Before running any algorithm, we used different visualization techniques in order to retrieve the original 3D structure of the data. First, we used PCA to reduce the data to the three principal components. The resulting plots, colored using the true labels, help to visualize the original topology. However, in order to have a clear understanding of the overall structure of the dataset, three plots are needed, corresponding to the projections of the data on the $PC_1-PC_2$, $PC_2-PC_3$, $PC_1-PC_3$ planes. For this reason, more compact visualization methods such as t-SNE and MDS are used. \\
-\noindent For t-SNE, a search for the optimal perplexity parameter was conducted over the range $[5,100]$ with increments of 5, using the silhouette score as the evaluation metric.
-The search identified the optimal perplexity value as $p_{best}=40$, which was then used to generate the two-dimensional visualization presented in Figure~\ref{fig:visualization_tsne}.
-For MDS, the number of output dimensions was set to $n_d = 2$ to produce a two-dimensional plot.
-A small number of initializations $n_{init}=2$ was chosen due to the linear scaling of run time with this parameter and the negligible improvement in visual quality observed for higher values.
-The maximum number of iterations was set to $max_{iter} = 200$.
-\begin{comment}[!t]
-    \centering
-    \includegraphics[width=0.4\linewidth]{Pictures/experiment1/t-SNE.png}
-    \hskip 1mm
-    \includegraphics[width=0.4\linewidth]{Pictures/experiment1/MDS.png}
-    \caption{t-SNE (a) and MDS (b) visualizations colored using the true labels.}
-    \label{fig:visualization}
-\end{comment}
 \begin{figure*}[!t]
-    \centering
-    \begin{subfigure}[b]{0.43\linewidth}
+    \begin{subfigure}{0.4\linewidth}
         \centering
         \includegraphics[width=\linewidth]{Pictures/experiment1/t-SNE.png}
         \caption{t-SNE visualization}
         \label{fig:visualization_tsne}
     \end{subfigure}
-    \hspace{2cm}
-    \begin{subfigure}[b]{0.44\linewidth}
+    \hspace{1.5cm}
+    \begin{subfigure}{0.4\linewidth}
         \centering
         \includegraphics[width=\linewidth]{Pictures/experiment1/MDS.png}
         \caption{MDS visualization}
@@ -267,21 +250,31 @@ The maximum number of iterations was set to $max_{iter} = 200$.
     \end{subfigure}
     \caption{Comparison of t-SNE and MDS reduction methods. The plots are colored according to the true labels.}
     \label{fig:visualization}
-\end{figure*}\\
+\end{figure*}
+\newpage
+\section{Results}
+\subsection{Problem 1}
+\vspace{-1em}
+\noindent Before running any algorithm, we used different visualization techniques in order to retrieve the original 3D structure of the data. First, we used PCA to reduce the data to the three principal components. The resulting plots, colored using the true labels, help to visualize the original topology. However, in order to have a clear understanding of the overall structure of the dataset, three plots are needed, corresponding to the projections of the data on the $PC_1-PC_2$, $PC_2-PC_3$, $PC_1-PC_3$ planes. For this reason, more compact visualization methods such as t-SNE and MDS are used. \\
+\noindent For t-SNE, a search for the optimal perplexity parameter was conducted over the range $[5,100]$ with increments of 5, using the silhouette score as the evaluation metric.
+The search identified the optimal perplexity value as $p_{best}=40$, which was then used to generate the two-dimensional visualization presented in Figure~\ref{fig:visualization_tsne}.
+For MDS, the number of output dimensions was set to $n_d = 2$ to produce a two-dimensional plot.
+A small number of initializations $n_{init}=2$ was chosen due to the linear scaling of run time with this parameter and the negligible improvement in visual quality observed for higher values.
+The maximum number of iterations was set to $max_{iter} = 200$.\\
 \noindent Following the evaluation of both t-SNE and MDS, as illustrated in Figure~\ref{fig:visualization}, MDS was selected for the presentation of the results.
 This choice was motivated by the method’s ability, similarly to PCA, to preserve the global structure and overall patterns of the original dataset while providing a more compact representation.
 In contrast, although t-SNE offers a more compact visualization than PCA, it introduces distortions in the global data structure, making it less suitable for the present analysis.
 \noindent Having established a suitable visualization framework, clustering algorithms were subsequently applied.
 The first algorithm considered was K-means.
 To determine the optimal number of clusters K, hierarchical clustering was performed, and the optimal value was selected based on the largest jump in the dendrogram, as shown in Figure~\ref{fig:dendrogram}.
-\begin{figure}[!h]
+\begin{figure}[b]
     \centering
     \includegraphics[width=\linewidth]{Pictures/experiment1/dendrogram.png}
     \caption{The dendrogram resulting from hierarchical clustering in Problem 1.}
     \label{fig:dendrogram}
 \end{figure}
 \noindent The best value for the $K$ parameter was found to be $K=2$. The results obtained by initializing the algorithm with this value are reported in Figure~\ref{fig:kmeans}. 
-\begin{figure}%[H]
+\begin{figure}[t]
     \centering
     \includegraphics[width=\linewidth]{Pictures/experiment1/K_means.png}
     \caption{Clusters obtained from the K-means algorithm for Problem 1.}
@@ -292,12 +285,7 @@ This outcome was expected, as K-means assumes convex, linearly separable cluster
 The inadequacy of this clustering is further confirmed by the NMI score of $0.0105$, which is close to zero.
 \noindent Next, the DBSCAN algorithm was applied. The minimum sample parameter $m_s$ was set to 3, as $m_s=1$ would reduce each data point to a core point, eliminating the density requirement, and $m_s=2$ effectively reduces DBSCAN to hierarchical clustering with single linkage.
 The $\varepsilon$ parameter was estimated by identifying the point of maximum second derivative of the $k$-NN distance curve, after applying Savitzky--Golay smoothing~\cite{savitzky1964smoothing}, as illustrated in Figure~\ref{fig:knn}.
-\begin{figure}%[h]
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/experiment1/k_nn.png}
-    \caption{$k$-NN distance plot for $m_s=3$ in Problem 1.}
-    \label{fig:knn}
-\end{figure}  
+
 \noindent The resulting parameters were
 \begin{equation}
     (\varepsilon, m_s) = (249.01, 3).
@@ -305,7 +293,7 @@ The $\varepsilon$ parameter was estimated by identifying the point of maximum se
 \noindent The obtained value of $\varepsilon$ is consistent with the result of a grid search over the NMI, which yielded $\varepsilon_{\text{grid-search}}=255.0$, as shown in Figure~\ref{fig:nmi_heatmap}.
 \begin{figure}[b]
     \centering
-    \includegraphics[width=0.8\linewidth]{Pictures/experiment1/Heatmap_NMI.png}
+    \includegraphics[width=0.9\linewidth]{Pictures/experiment1/Heatmap_NMI.png}
     \caption{Grid-search for $(\varepsilon, m_s)$ parameters in DBSCAN for Problem 1.}
     \label{fig:nmi_heatmap}
 \end{figure}
@@ -314,7 +302,13 @@ While the algorithm successfully identifies the cluster corresponding to the rin
 Additionally, four points are identified as outliers.
 The resulting NMI score of $0.7527$ represents a substantial improvement over K-means, whose clusters failed to capture the dataset’s structure.
 Nevertheless, this is still not a satisfying result, since the algorithm failed to correctly recognise all three groups lying in the data.
-\begin{figure}[h]
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/experiment1/k_nn.png}
+    \caption{$k$-NN distance plot for $m_s=3$ in Problem 1.}
+    \label{fig:knn}
+\end{figure}  
+\begin{figure}[b]
     \centering
     \includegraphics[width=\linewidth]{Pictures/experiment1/DBSCAN.png}
     \caption{Clusters obtained using the DBSCAN algorithm for problem 1.}
@@ -323,6 +317,12 @@ Nevertheless, this is still not a satisfying result, since the algorithm failed 
 
 \subsection{Problem 2}
 \noindent To address Problem 2, DBSCAN was preferred over K-means due to the intrinsic limitations of centroid-based clustering in anomaly detection. Specifically, K-means partitions the dataset by minimizing the within-cluster variance. In this case, K-means has to be initialized with $K=2$ in order to collect every non anomalous time series in one cluster, while keeping the anomaly in the other. If one centroid were to correctly isolate the anomaly, the second centroid would have to cover the entire diffuse cloud of normal time series, resulting in a disproportionately high cost function. To minimize the overall variance, K-means tends to arbitrarily bisect the dataset into two roughly equal-variance clusters, inevitably grouping the anomaly together with normal time series.
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.7\linewidth]{Pictures/experiment2/DBSCAN_performance.png}
+    \caption{F1 score of DBSCAN for different offset amplitudes of the injected anomaly.}
+    \label{fig:DBSCAN_performance}
+\end{figure}
 \noindent In contrast, DBSCAN effectively isolates the anomaly by evaluating Euclidean distances between time series in the 100-dimensional space.
 The algorithm requires the specification of $\varepsilon$ and $m_s$ parameters.
 For $m_s=1$, the algorithm would have classified the anomaly as part of the cluster containing every other non-anomalous time series, preventing effective anomaly detection.
@@ -347,14 +347,8 @@ Smaller values of $\varepsilon$ risk detecting false anomalies, whereas larger v
 \noindent The algorithm was then executed on the dataset while varying the amplitude of the anomalous offset.
 Figure~\ref{fig:DBSCAN_performance} presents the F1 score as a function of the anomaly amplitude and two operational regimes are evident from the results.
 For amplitudes $A<15$, DBSCAN is unable to distinguish between the anomalous and regular time series.
-For $A\ge 15$, the algorithm successfully identifies the anomalous series. Figure~\ref{fig:Anomalies_amplitude} illustrates the ground truth anomalies and the corresponding DBSCAN results for two representative amplitudes.
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.7\linewidth]{Pictures/experiment2/DBSCAN_performance.png}
-    \caption{F1 score of DBSCAN for different offset amplitudes of the injected anomaly.}
-    \label{fig:DBSCAN_performance}
-\end{figure}\\
-\begin{figure*}[!t]
+For $A\ge 15$, the algorithm successfully identifies the anomalous series. Figure~\ref{fig:Anomalies_amplitude} illustrates the ground truth anomalies and the corresponding DBSCAN results for two representative amplitudes.\\
+\begin{figure*}
     \centering
     \includegraphics[width=0.8\linewidth]{Pictures/experiment2/Anomalies_amplitude13.png}
     \hskip 1mm
@@ -369,7 +363,7 @@ These findings generalize to multiple anomalies; however, a single anomaly was i
 \subsection{Problem 3}
 \noindent In order to correctly use K-means algorithm to solve this problem, the best $K$ parameter is determined. To do so, hierarchical clustering is performed, selecting the optimal value for $K$ from the maximum jump that occurs in the dendrogram, reported in Figure~\ref{fig:3}. This analysis yielded a value of $K = 3$. This value was confirmed by a parameter search using the NMI as an evaluation metric. The obtained maximum value is
 \begin{equation}
-    \max_K \text{NMI} = \text{NMI}(K = 3) \approx 0.90,
+    \max_K \mathrm{NMI} = \mathrm{NMI}(K = 3) \approx 0.90,
 \end{equation}
 as shown in Figure~\ref{fig:4}. It is important to note that this second method makes use of the ground truth labels. Therefore it does not constitute an estimation of $K$, but rather a validation of the result obtained from the dendrogram.
 \begin{figure}
@@ -415,7 +409,12 @@ The results are reported in Figure~\ref{}
     \label{fig:8}
 \end{figure}
 \section{Conclusions}
-
+\noindent In this work, we evaluated the performance of K-means, DBSCAN, and hierarchical clustering across four synthetic datasets, each designed to test different aspects of clustering algorithms.
+K-means ....
+DBSCAn ...
+Hierarchical clustering ...
+No clustering algorithm proved effective in recovering the underlying structure of a dataset with uniform density and non-linearly separable pattern.
+In conclusion the results demonstrate that the effectiveness of clustering algorithms depends on the dataset’s intrinsic properties, and that combining visual representations with quantitative metrics is essential for robust evaluation.
 
 %-------BIBLIOGRAPHY-------------------
 
