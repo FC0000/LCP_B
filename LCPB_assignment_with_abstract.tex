@@ -276,7 +276,7 @@ To determine the optimal number of clusters K, hierarchical clustering was perfo
 \noindent The best value for the $K$ parameter was found to be $K=2$. The results obtained by initializing the algorithm with this value are reported in Figure~\ref{fig:kmeans}. 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\linewidth]{Pictures/experiment1/K_means.png}
+    \includegraphics[width=0.9\linewidth]{Pictures/experiment1/K_means.png}
     \caption{Clusters obtained from the K-means algorithm for Problem 1.}
     \label{fig:kmeans}
 \end{figure}
@@ -293,7 +293,7 @@ The $\varepsilon$ parameter was estimated by identifying the point of maximum se
 \noindent The obtained value of $\varepsilon$ is consistent with the result of a grid search over the NMI, which yielded $\varepsilon_{\text{grid-search}}=255.0$, as shown in Figure~\ref{fig:nmi_heatmap}.
 \begin{figure}[b]
     \centering
-    \includegraphics[width=0.9\linewidth]{Pictures/experiment1/Heatmap_NMI.png}
+    \includegraphics[width=0.85\linewidth]{Pictures/experiment1/Heatmap_NMI.png}
     \caption{Grid-search for $(\varepsilon, m_s)$ parameters in DBSCAN for Problem 1.}
     \label{fig:nmi_heatmap}
 \end{figure}
@@ -310,19 +310,29 @@ Nevertheless, this is still not a satisfying result, since the algorithm failed 
 \end{figure}  
 \begin{figure}[b]
     \centering
-    \includegraphics[width=\linewidth]{Pictures/experiment1/DBSCAN.png}
+    \includegraphics[width=0.9\linewidth]{Pictures/experiment1/DBSCAN.png}
     \caption{Clusters obtained using the DBSCAN algorithm for problem 1.}
     \label{fig:dbscan}
 \end{figure}
 
 \subsection{Problem 2}
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Pictures/experiment2/Anomalies_amplitude13.png}
+    \hskip 1mm
+    \includegraphics[width=0.8\linewidth]{Pictures/experiment2/Anomalies_amplitude15.png}
+    \caption{Ground truth anomalies for $A=13$ (top panel) and $A=15$ (bottom panel) and the correspondent results of DBSCAN.}
+    \label{fig:Anomalies_amplitude}
+\end{figure*}
+
 \noindent To address Problem 2, DBSCAN was preferred over K-means due to the intrinsic limitations of centroid-based clustering in anomaly detection. Specifically, K-means partitions the dataset by minimizing the within-cluster variance. In this case, K-means has to be initialized with $K=2$ in order to collect every non anomalous time series in one cluster, while keeping the anomaly in the other. If one centroid were to correctly isolate the anomaly, the second centroid would have to cover the entire diffuse cloud of normal time series, resulting in a disproportionately high cost function. To minimize the overall variance, K-means tends to arbitrarily bisect the dataset into two roughly equal-variance clusters, inevitably grouping the anomaly together with normal time series.
-\begin{figure}[t]
+\begin{figure}[b]
     \centering
     \includegraphics[width=0.7\linewidth]{Pictures/experiment2/DBSCAN_performance.png}
     \caption{F1 score of DBSCAN for different offset amplitudes of the injected anomaly.}
     \label{fig:DBSCAN_performance}
 \end{figure}
+
 \noindent In contrast, DBSCAN effectively isolates the anomaly by evaluating Euclidean distances between time series in the 100-dimensional space.
 The algorithm requires the specification of $\varepsilon$ and $m_s$ parameters.
 For $m_s=1$, the algorithm would have classified the anomaly as part of the cluster containing every other non-anomalous time series, preventing effective anomaly detection.
@@ -342,72 +352,66 @@ The expected Euclidean distance between two regular trajectories is given by
 \end{equation}
 We retrieve a theoretical distance in agreement with the empirical estimation.
 The final value of $\varepsilon$ was chosen by adding a 10\% margin to $d_{mean}$ to ensure that the anomaly would be classified as an outlier.
-Smaller values of $\varepsilon$ risk detecting false anomalies, whereas larger values would fail to identify the anomaly correctly.
-
+Smaller values of $\varepsilon$ risk detecting false anomalies, whereas larger values would fail to identify the anomaly correctly.\\
 \noindent The algorithm was then executed on the dataset while varying the amplitude of the anomalous offset.
 Figure~\ref{fig:DBSCAN_performance} presents the F1 score as a function of the anomaly amplitude and two operational regimes are evident from the results.
 For amplitudes $A<15$, DBSCAN is unable to distinguish between the anomalous and regular time series.
 For $A\ge 15$, the algorithm successfully identifies the anomalous series. Figure~\ref{fig:Anomalies_amplitude} illustrates the ground truth anomalies and the corresponding DBSCAN results for two representative amplitudes.\\
-\begin{figure*}
-    \centering
-    \includegraphics[width=0.8\linewidth]{Pictures/experiment2/Anomalies_amplitude13.png}
-    \hskip 1mm
-    \includegraphics[width=0.8\linewidth]{Pictures/experiment2/Anomalies_amplitude15.png}
-    \caption{Ground truth anomalies for $A=13$ (top panel) and $A=15$ (bottom panel) and the correspondent results of DBSCAN.}
-    \label{fig:Anomalies_amplitude}
-\end{figure*}
-
 \noindent In each subfigure, the left panel displays the injected anomaly in isolation for visual comparison, while the right panel shows the full dataset labeled according to DBSCAN clustering.
 These findings generalize to multiple anomalies; however, a single anomaly was injected here to maintain graphical clarity, facilitating interpretation of the results.
-
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/experiment3/dendrogram.png}
+    \caption{The dendrogram resulting from hierarchical clustering in Problem 3.}
+    \label{fig:3}
+\end{figure}
+\begin{figure}[b]
+    \centering
+    \includegraphics[width=\linewidth]{Pictures/experiment3/kmeans_grid_search.png}
+    \caption{Grid-search of the parameter K in Problem 3.}
+    \label{fig:4}
+\end{figure}
+\vspace{-2em}
 \subsection{Problem 3}
 \noindent In order to correctly use K-means algorithm to solve this problem, the best $K$ parameter is determined. To do so, hierarchical clustering is performed, selecting the optimal value for $K$ from the maximum jump that occurs in the dendrogram, reported in Figure~\ref{fig:3}. This analysis yielded a value of $K = 3$. This value was confirmed by a parameter search using the NMI as an evaluation metric. The obtained maximum value is
 \begin{equation}
     \max_K \mathrm{NMI} = \mathrm{NMI}(K = 3) \approx 0.90,
 \end{equation}
 as shown in Figure~\ref{fig:4}. It is important to note that this second method makes use of the ground truth labels. Therefore it does not constitute an estimation of $K$, but rather a validation of the result obtained from the dendrogram.
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/experiment3/dendrogram.png}
-    \caption{The dendrogram resulting from hierarchical clustering in Problem 3.}
-    \label{fig:3}
-\end{figure}
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{Pictures/experiment3/kmeans_grid_search.png}
-    \caption{Grid-search of the parameter K in Problem 3.}
-    \label{fig:4}
-\end{figure}
 \newline K-means algorithm was then executed setting $K=3$. The results are reported in Figures~\ref{fig:5}-\ref{fig:6}.
-\begin{figure}
+\begin{figure}[t]
     \centering
     \includegraphics[width=\linewidth]{Pictures/experiment3/clusters.png}
     \caption{Clusters obtained from K-means algorithm in shape-based clustering in Problem 3.}
     \label{fig:5}
 \end{figure}
-\begin{figure}
+\begin{figure}[b]
     \centering
     \includegraphics[width=\linewidth]{Pictures/experiment3/centroids.png}
     \caption{Centroids obtained from K-means algorithm in shape-based clustering in Problem 3.}
     \label{fig:6}
 \end{figure}
 The centroids reported in Figure~\ref{fig:6} confirm that K-means has successfully recovered the underlying patterns: centroid 0 resembles a square wave, centroid 1 a  sinusoidal wave, centroid 2 a flat, noisy signal. Thus the three groups defined in the data generation process have been recovered. The resulting clusters are depicted in Figure~\ref{fig:6}.
-\subsection{Problem 4}
-\noindent To address Problem 4, K-means and DBSCAN were applied to recover the original labels. However, both algorithms proved unsuccessful. K-means failed due to the non-linear separability of the data, since it assumes convex, linearly separable clusters, which does not hold true for this dataset. Conversely, DBSCAN struggled with the dataset's uniform density. As a density-based approach, it merged all data points into a single cluster, withoud detecting any internal density variations.
-The results are reported in Figure~\ref{}
-
-\begin{figure}
+\begin{figure}[t]
     \centering
     \includegraphics[width=0.6\linewidth]{Pictures/experiment4/k_means.png}
     \caption{Clusters obtained from K-means algorithm in Problem 4. DA CAMBIARE}
     \label{fig:7}
 \end{figure}
-\begin{figure}
+
+\subsection{Problem 4}
+\noindent To address Problem 4, K-means and DBSCAN were applied to recover the original labels. However, both algorithms proved unsuccessful. K-means failed due to the non-linear separability of the data, since it assumes convex, linearly separable clusters, which does not hold true for this dataset. Conversely, DBSCAN struggled with the dataset's uniform density. As a density-based approach, it merged all data points into a single cluster, withoud detecting any internal density variations.
+The results are reported in Figure~\ref{}.
+
+
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.6\linewidth]{Pictures/experiment4/DBSCAN.png}
     \caption{Clusters obtained from DBSCAN algorithm in Problem 4. DA CAMBIARE}
     \label{fig:8}
 \end{figure}
+
+
 \section{Conclusions}
 \noindent In this work, we evaluated the performance of K-means, DBSCAN, and hierarchical clustering across four synthetic datasets, each designed to test different aspects of clustering algorithms.
 K-means ....
@@ -415,6 +419,7 @@ DBSCAn ...
 Hierarchical clustering ...
 No clustering algorithm proved effective in recovering the underlying structure of a dataset with uniform density and non-linearly separable pattern.
 In conclusion the results demonstrate that the effectiveness of clustering algorithms depends on the dataset’s intrinsic properties, and that combining visual representations with quantitative metrics is essential for robust evaluation.
+
 
 %-------BIBLIOGRAPHY-------------------
 
