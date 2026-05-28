@@ -1,0 +1,8 @@
+- attivare cloud veneto
+- riprodurre il primo plot (del paper) della probability of SAT usando il bruteforce scalando con n
+- riprodurre queste ultime curve aumentando p con QAOA con n fissato (per piu n)
+- scrivere codice per grafico del gradiente (gradiente già calcolato da scipy.minimize)
+- fare piccolo benchmarking ("grid search") misurando energia minima, success probability e gradienti al variare di p, m e su 10 formule diverse (a fissato m,n,p). (le formule ci servono per fare le medie)
+    Stimare quanto tempo ci vuole per capire come scalare su cloud veneto
+
+LE LINEE GUIDA DELLA SILOI SONO MOLTO INDICATIVE.
