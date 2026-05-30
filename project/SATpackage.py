@@ -15,6 +15,7 @@ from qiskit_aer import AerSimulator
 from qiskit_aer.primitives import EstimatorV2, SamplerV2
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
+import json
 # from qiskit.primitives import StatevectorEstimator, StatevectorSampler
 
 
@@ -247,6 +248,7 @@ def QAOA_SATsolver(formula,
                    p,
                    N_samples = 10000,
                    optimizer = "Nelder-Mead",
+                   steps_optim = 1000,
                    initial_params = None,
                    seed = None,
                    verbose = False,
@@ -280,7 +282,7 @@ def QAOA_SATsolver(formula,
         cost_function, 
         initial_params, 
         method=optimizer, 
-        options={"maxiter":1000}, 
+        options={"maxiter": steps_optim}, 
     )
                 
     # extract optimal parameters and sample from the optimal circuit
@@ -317,6 +319,7 @@ def gridsearch_QAOA_SATsolver(
         n_trials=10,
         N_samples=10000,
         optimizer="Nelder-Mead",
+        steps_optim=1000,
         n_jobs=-1, 
         verbose=False,
         dir_name="results_2sat",
@@ -336,6 +339,19 @@ def gridsearch_QAOA_SATsolver(
 
     '''
 
+    run_metadata = {
+        "k": int(k),
+        "num_vars": int(num_vars),
+        "p_values": [int(p) for p in p_values],
+        "m_values": [int(m) for m in m_values],
+        "n_trials": int(n_trials),
+        "N_samples": int(N_samples),
+        "optimizer": str(optimizer),
+        "steps_optim": int(steps_optim),
+        "n_jobs": int(n_jobs),
+        "run_name": str(run_name)
+    }
+
     # define the worker function that runs on each CPU core
     def worker(p, m, trial_idx):
         # create a seed for this specific run
@@ -352,7 +368,8 @@ def gridsearch_QAOA_SATsolver(
             seed=trial_seed,
             N_samples=N_samples,
             optimizer=optimizer,
-            verbose=False
+            steps_optim=steps_optim,
+            verbose=verbose
         )
         # add metadata for tracking
         result['trial'] = trial_idx
@@ -369,20 +386,31 @@ def gridsearch_QAOA_SATsolver(
         for m in m_values 
         for t in range(n_trials)
     )
+ 
+    execution_time = time.time() - time_start
+    print(f"Executed {total_tasks} simulations in {execution_time:.2f} seconds.")
+    run_metadata["total_execution_time_sec"] = execution_time
 
-    print(f"Executed {total_tasks} simulations in {time.time() - time_start:.2f} seconds.")
-
-    # data saving with pandas
-    df_results = pd.DataFrame(results)
     os.makedirs(dir_name, exist_ok=True)
-    df_results.to_csv(f"{dir_name}/{run_name}_n{num_vars}.csv", index=False)
+    
+    # save data (CSV)
+    df_results = pd.DataFrame(results)
+    csv_path = f"{dir_name}/{run_name}_n{num_vars}.csv"
+    df_results.to_csv(csv_path, index=False)
+
+    # save metadata (JSON)
+    json_path = f"{dir_name}/{run_name}_n{num_vars}_meta.json"
+    with open(json_path, 'w') as json_file:
+        json.dump(run_metadata, json_file, indent=4)
 
     # group by 'p' and 'm', then calculate the mean and std across the n_trials
     summary_df = df_results.groupby(['p', 'm'])[['energy_Hc', 'success_prob', 'time_sec']].agg(['mean', 'std']).reset_index()
     summary_df.columns = ['_'.join(col).strip('_') if type(col) is tuple and col[1] else col[0] for col in summary_df.columns.values]
 
     if verbose:
+        print(f"\nSaved results to: {csv_path}")
+        print(f"Saved metadata to: {json_path}")
         print("\nHead of summary statistics:")
         print(summary_df.head())
     
-    return summary_df
+    return summary_df, run_metadata
