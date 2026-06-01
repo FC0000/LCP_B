@@ -18,33 +18,29 @@ import matplotlib.pyplot as plt
 import json
 # from qiskit.primitives import StatevectorEstimator, StatevectorSampler
 
-
 # ----------------- Classical Algorithms for SAT generation and exact solving  ----------------- #
 
 class kSATGenerator:
-    def __init__(self, num_clauses, num_vars, k, seed=None):
-        self.num_clauses = num_clauses
-        self.num_vars = num_vars
+    def __init__(self, k, seed=None):
         self.k = k
         self.random = random.Random(seed)
 
-    def generate(self):
-        max_num_clauses = 2**self.k * math.comb(self.num_vars, self.k)
-        if self.num_clauses > max_num_clauses:
+    def generate(self, num_clauses, num_vars):
+        max_num_clauses = 2**self.k * math.comb(num_vars, self.k)
+        if num_clauses > max_num_clauses:
             raise ValueError("Too many clauses")
         
-        vars_list = list(range(1, self.num_vars + 1))
+        vars_list = list(range(1, num_vars + 1))
         clauses = set()
 
-        while len(clauses) < self.num_clauses:
+        while len(clauses) < num_clauses:
             variables = sorted(self.random.sample(vars_list, self.k))
             literals = [var * self.random.choice([1, -1]) for var in variables]
             clause = tuple(literals)
             clauses.add(clause)
 
         return list(clauses)
-
-
+    
 class Pos1in2SATGenerator:
     def __init__(self, num_clauses, num_vars, k, seed=None):
         self.num_clauses = num_clauses
@@ -131,7 +127,6 @@ def count_violated_clauses(formula, bitstring, one_in_k=False):
 
 
 # ----------------- Quantum Algorithms ----------------- #
-
 def ksat_hamiltonian(formula):
     n_vars = get_num_variables(formula)
 
@@ -353,36 +348,33 @@ def gridsearch_QAOA_SATsolver(
     }
 
     # define the worker function that runs on each CPU core
-    def worker(p, m, trial_idx):
-        # create a seed for this specific run
-        trial_seed = hash(f"{run_name}_p{p}_m{m}_t{trial_idx}") % (2**32)
+    def worker(m, trial_idx):
+        gen = kSATGenerator(k=k, seed=None)
+        formula = gen.generate(num_clauses=m, num_vars=num_vars)
         
-        # generate the formula using the TwoSAT generator we built earlier
-        gen = kSATGenerator(num_clauses=m, num_vars=num_vars, k=k, seed=trial_seed)
-        formula = gen.generate()
-        
-        # run the solver
-        result = QAOA_SATsolver(
-            formula=formula,
-            p=p,
-            seed=trial_seed,
-            N_samples=N_samples,
-            optimizer=optimizer,
-            steps_optim=steps_optim,
-            verbose=verbose
-        )
-        # add metadata for tracking
-        result['trial'] = trial_idx
+        results = []
+        for p in p_values:
+            result = QAOA_SATsolver(
+                formula=formula,
+                p=p,
+                N_samples=N_samples,
+                optimizer=optimizer,
+                steps_optim=steps_optim,
+                verbose=verbose
+            )
+            # add metadata for tracking
+            result["p"] = p
+            result["trial"] = trial_idx
+            results.append(result)
         return result
 
-    total_tasks = len(p_values) * len(m_values) * n_trials
+    total_tasks = len(m_values) * n_trials # a task includes all values of p
     print(f"Starting Grid Search: {total_tasks} total simulations across {n_jobs if n_jobs > 0 else 'all'} cores...")
     time_start = time.time()
 
     # parallelize the nested loops using joblib
     results = Parallel(n_jobs=n_jobs)(
-        delayed(worker)(p, m, t) 
-        for p in p_values 
+        delayed(worker)(m, t)
         for m in m_values 
         for t in range(n_trials)
     )
