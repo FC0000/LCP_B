@@ -64,7 +64,7 @@ class Pos1in2SATGenerator:
 
         return list(clauses)
     
-def SATsolver(formula, seed):
+def SATsolver(formula):
     """Finds if a formula is satisfiable."""
 
     with Glucose3(shape=formula) as solver:
@@ -239,14 +239,47 @@ def success_probability(counts, formula):
     return success_shots / total_shots
 
 
+def expand_qaoa_params(old_params, p_old, p_new):
+    """
+    Expands the optimal parameters from an arbitrary depth p_old to p_new.
+    Respects Qiskit's parameter ordering: [beta_0..beta_p, gamma_0..gamma_p].
+    """
+    delta_p = p_new - p_old
+    
+    # Se per qualche motivo p_new non è maggiore, non facciamo nulla
+    if delta_p <= 0:
+        return old_params
+        
+    new_params = np.zeros(2 * p_new)
+    
+    # Extract old betas and gammas
+    old_betas = old_params[:p_old]
+    old_gammas = old_params[p_old:]
+    
+    # Generate delta_p new random parameters (small noise) for the new layers
+    new_betas_padding = np.random.uniform(-0.01, 0.01, size=delta_p)
+    new_gammas_padding = np.random.uniform(-0.01, 0.01, size=delta_p)
+    
+    # Append the new layers to the old ones
+    new_betas = np.append(old_betas, new_betas_padding)
+    new_gammas = np.append(old_gammas, new_gammas_padding)
+    
+    # Reassemble in Qiskit's required order
+    new_params[:p_new] = new_betas
+    new_params[p_new:] = new_gammas
+    
+    return new_params
+
+
 def QAOA_SATsolver(formula,
                    p,
                    N_samples = 10000,
-                   optimizer = "Nelder-Mead",
+                   optimizer = "COBYLA",
                    steps_optim = 1000,
                    initial_params = None,
                    seed = None,
                    verbose = False,
+                   trial_idx = None
                    ):
     
     if initial_params is None:
@@ -295,7 +328,7 @@ def QAOA_SATsolver(formula,
     m = get_num_clauses(formula)
 
     if verbose:
-        print(f"(p={p}, m={m}): energy_Hc={energy_Hc:.4f}, success_prob={success_prob:.4f}, time_sec={time_end - time_start:.2f}")
+        print(f"(p={p}, m={m}), iter={trial_idx}: energy_Hc={energy_Hc:.4f}, success_prob={success_prob:.4f}, time_sec={time_end - time_start:.2f}", flush=True)
 
     return {"optimizer": optimizer,
             "p": p,
@@ -303,6 +336,7 @@ def QAOA_SATsolver(formula,
             "energy_Hc": energy_Hc,
             "success_prob": success_prob,
             "time_sec": time_end - time_start,
+            "opt_params": opt_result.x.tolist() 
     }
 
 
@@ -313,7 +347,7 @@ def gridsearch_QAOA_SATsolver(
         m_values, 
         n_trials=10,
         N_samples=10000,
-        optimizer="Nelder-Mead",
+        optimizer="COBYLA",
         steps_optim=1000,
         n_jobs=-1, 
         verbose=False,
@@ -321,7 +355,6 @@ def gridsearch_QAOA_SATsolver(
         run_name="default_run"):
     
     '''
-    
     BEFORE RUNNING THIS FUNCTION REMEMBER TO SET:
     os.environ["OMP_NUM_THREADS"] = "1"
     os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -331,7 +364,6 @@ def gridsearch_QAOA_SATsolver(
 
     => MUST be set before Qiskit/SciPy are called in parallel workers
        Indeed, scipy.optimize.minimize can use multiple threads internally, which can lead to oversubscription when combined with joblib's parallelism. 
-
     '''
 
     run_metadata = {
@@ -344,47 +376,74 @@ def gridsearch_QAOA_SATsolver(
         "optimizer": str(optimizer),
         "steps_optim": int(steps_optim),
         "n_jobs": int(n_jobs),
-        "run_name": str(run_name)
+        "run_name": str(run_name),
+        "heuristic_initialization": True
     }
 
     # define the worker function that runs on each CPU core
     def worker(m, trial_idx):
-        gen = kSATGenerator(k=k, seed=None)
+        # create a seed for this specific run
+        trial_seed = hash(f"{run_name}_m{m}_t{trial_idx}") % (2**32)
+        gen = kSATGenerator(k=k, seed=trial_seed)
         formula = gen.generate(num_clauses=m, num_vars=num_vars)
         
-        results = []
-        for p in p_values:
+        results_for_this_formula = []
+        current_initial_params = None
+        current_p = 0
+        
+        # ensure p_values are sorted for sequential layerwise training
+        for p in sorted(p_values):
+            if current_initial_params is None:
+                rng = np.random.default_rng(trial_seed)
+                current_initial_params = rng.uniform(0, 0.1, size=2*p)
+            else:
+                current_initial_params = expand_qaoa_params(current_initial_params, current_p, p)
+            
             result = QAOA_SATsolver(
                 formula=formula,
                 p=p,
                 N_samples=N_samples,
                 optimizer=optimizer,
                 steps_optim=steps_optim,
-                verbose=verbose
+                initial_params=current_initial_params,
+                seed=trial_seed,
+                verbose=verbose,
+                trial_idx=trial_idx
             )
-            # add metadata for tracking
-            result["p"] = p
-            result["trial"] = trial_idx
-            results.append(result)
-        return result
+            
+            # Save the optimized parameters to initialize the next p iteration
+            current_initial_params = np.array(result["opt_params"])
+            current_p = p
+            
+            del result["opt_params"]
 
-    total_tasks = len(m_values) * n_trials # a task includes all values of p
-    print(f"Starting Grid Search: {total_tasks} total simulations across {n_jobs if n_jobs > 0 else 'all'} cores...")
+            # add metadata for tracking
+            result["trial"] = trial_idx
+            results_for_this_formula.append(result)
+            
+        return results_for_this_formula
+
+    # A task now only iterates over m and trials. The p loop is inside the worker.
+    total_tasks = len(m_values) * n_trials 
+    print(f"Starting Grid Search: {total_tasks} unique formulas across {n_jobs if n_jobs > 0 else 'all'} cores...")
     time_start = time.time()
 
-    # parallelize the nested loops using joblib
-    results = Parallel(n_jobs=n_jobs)(
+    # parallelize the nested loops using joblib (with verbose added for tracking progress)
+    results_nested = Parallel(n_jobs=n_jobs)(
         delayed(worker)(m, t)
         for m in m_values 
         for t in range(n_trials)
     )
- 
+    
+    # Flatten the list of lists returned by the workers
+    results = [res for formula_results in results_nested for res in formula_results]
+
     execution_time = time.time() - time_start
-    print(f"Executed {total_tasks} simulations in {execution_time:.2f} seconds.")
+    print(f"Executed all simulations in {execution_time:.2f} seconds.")
     run_metadata["total_execution_time_sec"] = execution_time
 
     os.makedirs(dir_name, exist_ok=True)
-    
+
     # save data (CSV)
     df_results = pd.DataFrame(results)
     csv_path = f"{dir_name}/{run_name}_n{num_vars}.csv"
