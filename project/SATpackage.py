@@ -63,11 +63,11 @@ class Pos1in2SATGenerator:
             clauses.add(clause)
 
         return list(clauses)
-    
+
 def SATsolver(formula):
     """Finds if a formula is satisfiable."""
 
-    with Glucose3(shape=formula) as solver:
+    with Glucose3(bootstrap_with=formula) as solver:
         is_sat = solver.solve()
         
     return is_sat
@@ -124,6 +124,26 @@ def count_violated_clauses(formula, bitstring, one_in_k=False):
                 violated_count += 1
     return violated_count
 
+
+def exact_maxsat(formula, num_vars):
+    N = 2**num_vars
+    states = np.arange(N, dtype=np.int32)
+    violated_counts = np.zeros(N, dtype=np.int32)
+
+    for clause in formula:
+        clause_violated = np.ones(N, dtype=bool)
+        for lit in clause:
+            var_idx = abs(lit) - 1
+            bit_values = (states >> var_idx) & 1
+            if lit > 0:
+                lit_false = (bit_values == 0)
+            else:
+                lit_false = (bit_values == 1)
+            clause_violated &= lit_false
+        violated_counts += clause_violated
+        
+    min_violated = np.min(violated_counts)
+    return len(formula) - min_violated
 
 
 # ----------------- Quantum Algorithms ----------------- #
@@ -345,13 +365,14 @@ def gridsearch_QAOA_SATsolver(
         num_vars,
         p_values, 
         m_values, 
-        n_trials=10,
-        N_samples=10000,
-        optimizer="COBYLA",
-        steps_optim=1000,
+        n_trials=50,
+        trial_start=0,
+        N_samples=50000,
+        optimizer="L-BFGS-B",
+        steps_optim=10000,
         n_jobs=-1, 
         verbose=False,
-        dir_name="results_2sat",
+        dir_name="results",
         run_name="default_run"):
     
     '''
@@ -372,6 +393,7 @@ def gridsearch_QAOA_SATsolver(
         "p_values": [int(p) for p in p_values],
         "m_values": [int(m) for m in m_values],
         "n_trials": int(n_trials),
+        "trial_start": int(trial_start),
         "N_samples": int(N_samples),
         "optimizer": str(optimizer),
         "steps_optim": int(steps_optim),
@@ -386,6 +408,7 @@ def gridsearch_QAOA_SATsolver(
         trial_seed = hash(f"{run_name}_m{m}_t{trial_idx}") % (2**32)
         gen = kSATGenerator(k=k, seed=trial_seed)
         formula = gen.generate(num_clauses=m, num_vars=num_vars)
+        c_max = exact_maxsat(formula, num_vars) 
         
         results_for_this_formula = []
         current_initial_params = None
@@ -419,6 +442,10 @@ def gridsearch_QAOA_SATsolver(
 
             # add metadata for tracking
             result["trial"] = trial_idx
+            result["C_max"] = c_max
+            result["C_qaoa"] = m - result["energy_Hc"]
+            result["approx_ratio"] = result["C_qaoa"] / c_max if c_max > 0 else 1.0 
+
             results_for_this_formula.append(result)
             
         return results_for_this_formula
@@ -428,11 +455,11 @@ def gridsearch_QAOA_SATsolver(
     print(f"Starting Grid Search: {total_tasks} unique formulas across {n_jobs if n_jobs > 0 else 'all'} cores...")
     time_start = time.time()
 
-    # parallelize the nested loops using joblib (with verbose added for tracking progress)
+    # parallelize the nested loops using joblib (con il nuovo trial_start)
     results_nested = Parallel(n_jobs=n_jobs)(
         delayed(worker)(m, t)
         for m in m_values 
-        for t in range(n_trials)
+        for t in range(trial_start, trial_start + n_trials)
     )
     
     # Flatten the list of lists returned by the workers
@@ -454,8 +481,7 @@ def gridsearch_QAOA_SATsolver(
     with open(json_path, 'w') as json_file:
         json.dump(run_metadata, json_file, indent=4)
 
-    # group by 'p' and 'm', then calculate the mean and std across the n_trials
-    summary_df = df_results.groupby(['p', 'm'])[['energy_Hc', 'success_prob', 'time_sec']].agg(['mean', 'std']).reset_index()
+    summary_df = df_results.groupby(['p', 'm'])[['energy_Hc', 'success_prob', 'approx_ratio', 'time_sec']].agg(['mean', 'std']).reset_index()
     summary_df.columns = ['_'.join(col).strip('_') if type(col) is tuple and col[1] else col[0] for col in summary_df.columns.values]
 
     if verbose:
