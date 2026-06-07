@@ -13,6 +13,7 @@ from qiskit.circuit.library import QAOAAnsatz
 from qiskit.visualization import plot_histogram
 from qiskit_aer import AerSimulator
 from qiskit_aer.primitives import EstimatorV2, SamplerV2
+from qiskit_algorithms.gradients import ParamShiftEstimatorGradient
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import json
@@ -41,7 +42,7 @@ class kSATGenerator:
 
         return list(clauses)
     
-class Pos1in2SATGenerator:
+class Pos1inkSATGenerator:
     def __init__(self, num_clauses, num_vars, k, seed=None):
         self.num_clauses = num_clauses
         self.num_vars = num_vars
@@ -63,7 +64,7 @@ class Pos1in2SATGenerator:
             clauses.add(clause)
 
         return list(clauses)
-
+    
 def SATsolver(formula):
     """Finds if a formula is satisfiable."""
 
@@ -326,12 +327,34 @@ def QAOA_SATsolver(formula,
         return result.data.evs
 
     # classical optimization with scipy
-    opt_result = minimize(
-        cost_function, 
-        initial_params, 
-        method=optimizer, 
-        options={"maxiter": steps_optim}, 
-    )
+    if optimizer == "L-BFGS-B":
+
+        estimator_grad = ParamShiftEstimatorGradient(estimator=estimator)
+        def gradient_function(params):
+            job = estimator_grad.run(
+                circuits=[ansatz], 
+                observables=[cost_hamiltonian], 
+                parameter_values=[params]
+            )
+            result = job.result().gradients[0]
+            return np.array(result).astype(float).flatten()
+        
+        opt_result = minimize(
+            cost_function, 
+            initial_params, 
+            method=optimizer,
+            jac=gradient_function,
+            options={"maxiter": steps_optim}, 
+        )
+
+    else:
+
+        opt_result = minimize(
+            cost_function, 
+            initial_params, 
+            method=optimizer,
+            options={"maxiter": steps_optim}, 
+        )
                 
     # extract optimal parameters and sample from the optimal circuit
     optimal_circuit = ansatz.assign_parameters(opt_result.x)
@@ -405,7 +428,7 @@ def gridsearch_QAOA_SATsolver(
     # define the worker function that runs on each CPU core
     def worker(m, trial_idx):
         # create a seed for this specific run
-        trial_seed = hash(f"{run_name}_m{m}_t{trial_idx}") % (2**32)
+        trial_seed = hash(f"m{m}_t{trial_idx}") % (2**32)
         gen = kSATGenerator(k=k, seed=trial_seed)
         formula = gen.generate(num_clauses=m, num_vars=num_vars)
         c_max = exact_maxsat(formula, num_vars) 
