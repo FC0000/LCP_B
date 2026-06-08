@@ -9,17 +9,17 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 if __name__ == "__main__":
     data, metadata = gridsearch_QAOA_SATsolver(
-        k=3,                            # define the kSAT problem
+        k=2,                            # define the kSAT problem
         num_vars=10,                    # number of qubits/variables in the problem
-        p_values=[1, 2, 4, 8, 16],      # QAOA depths
-        m_values=[10, 20, 30, 40, 45, 50, 60, 70],   # number of clauses in the kSAT problem
-        n_trials=50,                    # number of random instances to test for each (p, m) pair
+        p_values=[8,16],                # QAOA depths
+        m_values=[4,8,10,12,14,16,20],  # number of clauses in the kSAT problem
+        n_trials=25,                    # number of random instances to test for each (p, m) pair
         trial_start=0,                  # starting index for trial numbering (useful for resuming runs)
         N_samples=50000,                # number of samples to draw from the QAOA state for each instance
-        optimizer="L-BFGS-B", # COBYLA  # classical optimizer to use for tuning the QAOA parameters
+        optimizer="L-BFGS-B",           # classical optimizer to use for tuning the QAOA parameters
         steps_optim=10000,              # maximum number of optimization steps
         n_jobs=-1,                      # use all your CPU threads
         verbose=True,                   # print progress and results to the console
-        dir_name="results_3sat",        # directory to save the results
-        run_name="test_run2"            # name for this run to save the results under
+        dir_name="results_2sat",        # directory to save the results
+        run_name="run_2sat_bfgs_grad"   # name for this run to save the results under
     )
