@@ -14,6 +14,7 @@ from qiskit.visualization import plot_histogram
 from qiskit_aer import AerSimulator
 from qiskit_aer.primitives import EstimatorV2, SamplerV2
 from qiskit_algorithms.gradients import ParamShiftEstimatorGradient
+from qiskit_algorithms.optimizers import SPSA
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import json
@@ -291,6 +292,27 @@ def expand_qaoa_params(old_params, p_old, p_new):
     
     return new_params
 
+class SPSA_EarlyStopping:
+    def __init__(self, patience=25, tol=1e-3, min_steps=1500):
+        self.patience = patience
+        self.tol = tol
+        self.min_steps = min_steps
+        self.history = []
+        self.steps = 0
+
+    def __call__(self, nfev, parameters, value, stepsize, accepted):
+        self.steps += 1
+        self.history.append(value)
+        
+        if len(self.history) > self.patience:
+            self.history.pop(0) 
+            if self.steps > self.min_steps:
+                window_spread = max(self.history) - min(self.history)
+                if window_spread < self.tol:
+                    return True 
+                
+        return False
+
 
 def QAOA_SATsolver(formula,
                    p,
@@ -338,7 +360,7 @@ def QAOA_SATsolver(formula,
             )
             result = job.result().gradients[0]
             return np.array(result).astype(float).flatten()
-        
+    
         opt_result = minimize(
             cost_function, 
             initial_params, 
@@ -346,6 +368,11 @@ def QAOA_SATsolver(formula,
             jac=gradient_function,
             options={"maxiter": steps_optim}, 
         )
+
+    elif optimizer == "SPSA":
+        early_stopper = SPSA_EarlyStopping()
+        spsa = SPSA(maxiter=steps_optim, termination_checker=early_stopper)
+        opt_result = spsa.minimize(fun=cost_function, x0=initial_params)
 
     else:
 
