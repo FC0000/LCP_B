@@ -1,0 +1,26 @@
+{
+    "k": 2,
+    "num_vars": 10,
+    "p_values": [
+        8,
+        16
+    ],
+    "m_values": [
+        4,
+        8,
+        10,
+        12,
+        14,
+        16,
+        20
+    ],
+    "n_trials": 25,
+    "trial_start": 0,
+    "N_samples": 50000,
+    "optimizer": "L-BFGS-B",
+    "steps_optim": 10000,
+    "n_jobs": -1,
+    "run_name": "run_2sat_bfgs_grad",
+    "heuristic_initialization": true,
+    "total_execution_time_sec": 61311.76716160774
+}
