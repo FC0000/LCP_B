@@ -1,3 +1,4 @@
+import hashlib
 import random
 import os
 import math
@@ -18,6 +19,7 @@ from qiskit_algorithms.optimizers import SPSA
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import json
+import hashlib
 # from qiskit.primitives import StatevectorEstimator, StatevectorSampler
 
 # ----------------- Classical Algorithms for SAT generation and exact solving  ----------------- #
@@ -316,7 +318,6 @@ class SPSA_EarlyStopping:
 
 def QAOA_SATsolver(formula,
                    p,
-                   N_samples = 10000,
                    optimizer = "COBYLA",
                    steps_optim = 1000,
                    initial_params = None,
@@ -330,8 +331,8 @@ def QAOA_SATsolver(formula,
         initial_params = rng.uniform(0, 0.1, size=2*p)
 
     estimator = EstimatorV2()
-    sampler = SamplerV2()
-    sampler.options.default_shots = N_samples
+    # sampler = SamplerV2()
+    # sampler.options.default_shots = N_samples
 
     time_start = time.time()
                 
@@ -386,25 +387,24 @@ def QAOA_SATsolver(formula,
     # extract optimal parameters and sample from the optimal circuit
     optimal_circuit = ansatz.assign_parameters(opt_result.x)
     optimal_circuit.measure_all()
-    job = sampler.run([(optimal_circuit,)])
-    sample_result = job.result()[0]
-    counts = sample_result.data.meas.get_counts()
+    # job = sampler.run([(optimal_circuit,)])
+    # sample_result = job.result()[0]
+    # counts = sample_result.data.meas.get_counts()
 
     energy_Hc = opt_result.fun
-    success_prob = success_probability(counts, formula)
+    # success_prob = success_probability(counts, formula)
 
     time_end = time.time()
 
     m = get_num_clauses(formula)
 
     if verbose:
-        print(f"(p={p}, m={m}), iter={trial_idx}: energy_Hc={energy_Hc:.4f}, success_prob={success_prob:.4f}, time_sec={time_end - time_start:.2f}", flush=True)
+        print(f"(p={p}, m={m}), iter={trial_idx}: energy_Hc={energy_Hc:.4f}, time_sec={time_end - time_start:.2f}", flush=True)
 
     return {"optimizer": optimizer,
             "p": p,
             "m": m,
             "energy_Hc": energy_Hc,
-            "success_prob": success_prob,
             "time_sec": time_end - time_start,
             "opt_params": opt_result.x.tolist() 
     }
@@ -417,7 +417,6 @@ def gridsearch_QAOA_SATsolver(
         m_values, 
         n_trials=50,
         trial_start=0,
-        N_samples=50000,
         optimizer="L-BFGS-B",
         steps_optim=10000,
         n_jobs=-1, 
@@ -444,7 +443,6 @@ def gridsearch_QAOA_SATsolver(
         "m_values": [int(m) for m in m_values],
         "n_trials": int(n_trials),
         "trial_start": int(trial_start),
-        "N_samples": int(N_samples),
         "optimizer": str(optimizer),
         "steps_optim": int(steps_optim),
         "n_jobs": int(n_jobs),
@@ -455,7 +453,8 @@ def gridsearch_QAOA_SATsolver(
     # define the worker function that runs on each CPU core
     def worker(m, trial_idx):
         # create a seed for this specific run
-        trial_seed = hash(f"m{m}_t{trial_idx}") % (2**32)
+        seed_string = f"m{m}_t{trial_idx}"
+        trial_seed = int(hashlib.md5(seed_string.encode()).hexdigest(), 16) % (2**32)
         gen = kSATGenerator(k=k, seed=trial_seed)
         formula = gen.generate(num_clauses=m, num_vars=num_vars)
         c_max = exact_maxsat(formula, num_vars) 
@@ -475,7 +474,6 @@ def gridsearch_QAOA_SATsolver(
             result = QAOA_SATsolver(
                 formula=formula,
                 p=p,
-                N_samples=N_samples,
                 optimizer=optimizer,
                 steps_optim=steps_optim,
                 initial_params=current_initial_params,
@@ -531,7 +529,7 @@ def gridsearch_QAOA_SATsolver(
     with open(json_path, 'w') as json_file:
         json.dump(run_metadata, json_file, indent=4)
 
-    summary_df = df_results.groupby(['p', 'm'])[['energy_Hc', 'success_prob', 'approx_ratio', 'time_sec']].agg(['mean', 'std']).reset_index()
+    summary_df = df_results.groupby(['p', 'm'])[['energy_Hc', 'approx_ratio', 'time_sec']].agg(['mean', 'std']).reset_index()
     summary_df.columns = ['_'.join(col).strip('_') if type(col) is tuple and col[1] else col[0] for col in summary_df.columns.values]
 
     if verbose:
