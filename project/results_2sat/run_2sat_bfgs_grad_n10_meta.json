@@ -14,7 +14,7 @@
         16,
         20
     ],
-    "n_trials": 25,
+    "n_trials": 35,
     "trial_start": 0,
     "N_samples": 50000,
     "optimizer": "L-BFGS-B",
