@@ -21,11 +21,11 @@
         20
     ],
     "n_trials": 100,
-    "N_samples": 50000,
+    "N_samples": 10000,
     "optimizer": "L-BFGS-B",
-    "steps_optim": 5000,
+    "steps_optim": 50000,
     "n_jobs": -1,
-    "run_name": "run_2sat_bfgs",
+    "run_name": "run_2sat_bfgs_nograd",
     "heuristic_initialization": true,
-    "total_execution_time_sec": 35867.26570343971
+    "total_execution_time_sec": 229101.35
 }
