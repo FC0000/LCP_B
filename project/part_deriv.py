@@ -12,7 +12,7 @@ import os
 import pandas as pd
 
 
-TASK_FOLDER = "gradient_results"
+TASK_FOLDER = "part_results"
 os.makedirs(TASK_FOLDER, exist_ok=True)
 
 
@@ -40,28 +40,32 @@ def compute_grad(m, n, p, n_grads, n_iter):
             result = job.result()[0]
             return result.data.evs
 
-        grads = []
+        partials = []
         for _ in range(n_grads):
             params = np.random.uniform(low=0, high=2*np.pi, size=ansatz.num_parameters)
 
-            grad = approx_fprime(params, cost_function)
-            grads.append(grad)
-        grad_norms = np.linalg.norm(grads, axis=1)
-        
+            def f1(x):
+                p_copy = params.copy()
+                p_copy[0] = x[0]
+                return cost_function(p_copy)
+
+            partial = approx_fprime(np.array([params[0]]), f1)
+            partials.append(partial)
+
         result= {
             "n_grads": n_grads,
-            "mean_grad_norm": np.mean(grad_norms),
-            "std_grad_norm": np.std(grad_norms),
+            "mean_part": np.mean(partials),
+            "std_part": np.std(partials),
             }
         pd.DataFrame([result]).to_csv(filename, index=False, mode="a", header=not os.path.exists(filename))
 
 
 n_values=[10]
-p_values=[1, 2, 4, 8, 16, 32]
+p_values=[1]
 m_values=np.arange(2, 21, 2)
 
 results = Parallel(n_jobs=-1)(
-    delayed(compute_grad)(m, n, p, n_grads=5000, n_iter=100)
+    delayed(compute_grad)(m, n, p, n_grads=5000, n_iter=50)
     for m in m_values
     for n in n_values
     for p in p_values
